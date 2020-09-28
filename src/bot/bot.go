@@ -22,7 +22,7 @@ const (
 	BOT_PHRASE_PART     = "Выберите наиболее подходящую тему"
 
 	BOT_PHRASE_SORRY     = "Извините, но я вас не понимаю. Выберите, пожалуйста, один из вариантов:"
-	BOT_PHRASE_AGAIN     = "Увас остались вопросы?"
+	BOT_PHRASE_AGAIN     = "У вас остались вопросы?"
 	BOT_PHRASE_REROUTING = "Сейчас переведу, секундочку."
 	BOT_PHRASE_BYE       = "Спасибо за обращение!"
 )
@@ -56,7 +56,7 @@ func Receive(c *gin.Context) {
 	go func(cCp *gin.Context, msg messages.Message) {
 		chatState := getState(c, &msg)
 
-		newState, err := processMessage(&msg, &chatState)
+		newState, err := processMessage(c, &msg, &chatState)
 		if err != nil {
 			logger.Warning("Error processMessage", err)
 		}
@@ -130,7 +130,7 @@ func checkErrorForSend(msg *messages.Message, err error, nextState database.Chat
 	return nextState, nil
 }
 
-func processMessage(msg *messages.Message, chatState *database.Chat) (database.ChatState, error) {
+func processMessage(c *gin.Context, msg *messages.Message, chatState *database.Chat) (database.ChatState, error) {
 	switch msg.MessageType {
 	case messages.MESSAGE_TREATMENT_START_BY_USER:
 		return chatState.CurrentState, nil
@@ -188,64 +188,64 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 		switch chatState.CurrentState {
 		case database.STATE_DUMMY, database.STATE_GREETINGS:
-			_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
+			_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
 
 			return checkErrorForSend(msg, err, database.STATE_MAIN_MENU)
 		case database.STATE_MAIN_MENU:
 			switch strings.ToLower(strings.TrimSpace(msg.Text)) {
 			case "1", "пункт 1":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting1)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting1)
 
 				return checkErrorForSend(msg, err, database.STATE_PART_1)
 			case "2", "пункт 2":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting2)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting2)
 
 				return checkErrorForSend(msg, err, database.STATE_PART_2)
 			case "3", "пункт 3":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting3)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting3)
 
 				return checkErrorForSend(msg, err, database.STATE_PART_3)
 			case "4", "пункт 4":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting4)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_PART, keyboardParting4)
 
 				return checkErrorForSend(msg, err, database.STATE_PART_4)
 			default:
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardMain)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardMain)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			}
 		case database.STATE_PART_1:
 			switch strings.ToLower(strings.TrimSpace(msg.Text)) {
 			case "1", "пункт 1":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 1 > Пункт 1", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 1 > Пункт 1", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "2", "пункт 2":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 1 > Пункт 2", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 1 > Пункт 2", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "3", "пункт 3":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 1 > Пункт 3", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 1 > Пункт 3", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "9", "возврат на шаг назад":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
 
 				return checkErrorForSend(msg, err, database.STATE_MAIN_MENU)
 			case "0", "соединить со специалистом":
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -253,82 +253,82 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 				return checkErrorForSend(msg, err, database.STATE_GREETINGS)
 			default:
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting1)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting1)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			}
 		case database.STATE_PART_2:
 			switch strings.ToLower(strings.TrimSpace(msg.Text)) {
 			case "1", "пункт 1":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 1", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 1", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "2", "пункт 2":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 2", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 2", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "3", "пункт 3":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 3", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 3", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "4", "пункт 4":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 4", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 4", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "5", "пункт 5":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 5", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 5", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "6", "пункт 6":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 6", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 6", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "7", "пункт 7":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 7", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 7", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "8", "пункт 8":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 8", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 2 > Пункт 8", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "9", "возврат на шаг назад":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			case "0", "соединить со специалистом":
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -336,34 +336,34 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 				return checkErrorForSend(msg, err, database.STATE_GREETINGS)
 			default:
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting2)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting2)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			}
 		case database.STATE_PART_3:
 			switch strings.ToLower(strings.TrimSpace(msg.Text)) {
 			case "1", "пункт 1":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 3 > Пункт 1", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 3 > Пункт 1", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "3", "пункт 3":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 3 > Пункт 3", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 3 > Пункт 3", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "9", "возврат на шаг назад":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
 
 				return checkErrorForSend(msg, err, database.STATE_MAIN_MENU)
 			case "0", "соединить со специалистом":
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -371,26 +371,26 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 				return checkErrorForSend(msg, err, database.STATE_GREETINGS)
 			default:
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting3)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting3)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			}
 		case database.STATE_PART_4:
 			switch strings.ToLower(strings.TrimSpace(msg.Text)) {
 			case "1", "пункт 1":
-				_, err := SendMessage(msg.LineId, msg.UserId, "Ответ на Пункт 4 > Пункт 1", nil)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, "Ответ на Пункт 4 > Пункт 1", nil)
 
 				time.Sleep(3 * time.Second)
 
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_AGAIN, keyboardParting)
 
 				return checkErrorForSend(msg, err, database.STATE_PARTING)
 			case "9", "возврат на шаг назад":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
 
 				return checkErrorForSend(msg, err, database.STATE_MAIN_MENU)
 			case "0", "соединить со специалистом":
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -398,18 +398,18 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 				return checkErrorForSend(msg, err, database.STATE_GREETINGS)
 			default:
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting4)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting4)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			}
 		case database.STATE_PARTING:
 			switch strings.ToLower(strings.TrimSpace(msg.Text)) {
 			case "1", "да":
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_GREETING, keyboardMain)
 
 				return checkErrorForSend(msg, err, database.STATE_MAIN_MENU)
 			case "2", "нет":
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_BYE, nil)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_BYE, nil)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -417,7 +417,7 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 				return checkErrorForSend(msg, err, database.STATE_GREETINGS)
 			case "0", "соединить со специалистом":
-				_, _ = SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
+				_, _ = SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_REROUTING, nil)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -425,7 +425,7 @@ func processMessage(msg *messages.Message, chatState *database.Chat) (database.C
 
 				return checkErrorForSend(msg, err, database.STATE_GREETINGS)
 			default:
-				_, err := SendMessage(msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting)
+				_, err := SendMessage(c, msg.LineId, msg.UserId, BOT_PHRASE_SORRY, keyboardParting)
 
 				return checkErrorForSend(msg, err, chatState.CurrentState)
 			}
